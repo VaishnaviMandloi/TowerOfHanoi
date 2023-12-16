@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Tower of Hanoi Visualization</title>
+
+<!--------- CSS STYLE ------------------>
+<style>
+
+body {
+  background: linear-gradient(to right, rgb(76, 76, 236) 0%, rgb(171, 171, 241) 20%, rgb(171, 171, 241) 80%, rgb(76, 76, 236) 100%);
+}
+
+h1{
+  text-align: center;
+}
+
+.nRings{
+  height: 10vh;
+  display: flex;
+  justify-content: center;
+}
+
+.nRings button ,a {
+  text-decoration: none;
+  margin: 2vh;
+  display: block;
+  border-radius: 5px ;
+  border-color: white;
+  padding: 10px 20px;
+  font-weight: 400;
+  font-size: 16px;
+  color: white;
+  background-color: blue;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-width: medium;
+}
+
+.nRings button:hover ,a:hover{
+  color: blue;
+  background-color: white;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 11px 25px ;
+  border-color: blue;
+}
+
+.container {
+  padding: 10px;
+}
+
+#message {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 630px;
+  min-height: 88px;
+  margin: 20px auto;
+  padding: 20px;
+  font-weight: 700;
+  font-size: 18px;
+  color: black;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#towers {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  margin: 20px auto;
+}
+
+#towers ul {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 150px;
+  padding: 0;
+  margin: 0 0;
+  border-bottom: 7px black solid;
+  list-style: none;
+  transition: opacity 0.1s ease-in-out;
+}
+
+#towers ul:before {
+  content: "";
+  background-color: black;
+  position: absolute;
+  width: 7px;
+  height: 100%;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+
+#towers li {
+  display: block;
+  z-index: 19;
+  height: 20px;
+  border-radius: 10px;
+  background-color: white;
+  position: relative;
+}
+
+#buttons {
+  display: flex;
+  justify-content: center;
+  width: 67vw;
+  padding: 20px 0;
+  margin: 20px auto;
+}
+
+#buttons div {
+  display: block;
+  border-radius: 5px;
+  margin: 0 20px;
+  padding: 20px 30px;
+  font-weight: 400;
+  font-size: 16px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.5;
+}
+
+#buttons div.clickable {
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.1s ease-in-out;
+}
+
+#buttons .solve {
+  background-color: darkgreen;
+}
+
+#buttons .restart {
+  background-color: firebrick;
+}
+
+#buttons div.clickable:hover {
+  padding: 20px 20px;
+  font-weight: 600;
+}
+
+#buttons div.clickable:active {
+  opacity: 1;
+}
+
+</style>
+<!----------- CSS STYLE END ------------->
+
+</head>
+
+<body>
+
+<!----------- Html structure ---------> 
+
+  <h1>TOWER OF HANOI</h1>
+  <div class="nRings">
+    <button onclick="enter()">Choose number of rings</button>
+    <a href="index.html">New Tower</a>
+  </div>
+
+  <div class="container">
+    <div id="message"></div>
+    <div id="towers">
+      <ul class="tower" data-tower="0"></ul>
+      <ul class="tower" data-tower="1"></ul>
+      <ul class="tower" data-tower="2"></ul>
+    </div>
+    <div id="buttons">
+      <div class="solve">Solve</div>
+      <div class="restart">Restart</div>
+    </div>
+  </div>
+
+<!------------- Html structure ------------>
+    
+<!------------ JavaScript scripting end ------------>
+<script>
+
+class TowersOfHanoi {
+  constructor(discs, towerEls, solveBtn, restartBtn) {
+    this.discs = discs; // number of discs
+    this.towerEls = towerEls; // array of all element have class tower
+    this.solveBtn = solveBtn;
+    this.restartBtn = restartBtn;
+
+    this.bindFunctions(); //create bound versions of 2 methods
+    this.initHanoi(); //intialization of various tower of hanoi aspects
+  }
+
+  bindFunctions() { //function binding, to set object reference with the 'this' keyword.
+		this.handleSolveFunc = this.handleSolve.bind(this);
+		this.initHanoiFunc = this.initHanoi.bind(this); 
+  }
+
+  initHanoi() {
+
+    this.initButtons(); //Initializes the Solve and Restart buttons
+
+    this.initTowers(); //Initializes the towers with the specified number of discs.
+
+    this.drawTowers(); //Clears and redraws the towers based on the current state.
+
+    // display starting meassage
+    this.displayMessage(
+      "To move all the discs from the left tower to the rightmost tower.<br>By moving one disc at a time. A disc cannot be on top of a smaller disc.<br>Click on SOLVE to see how!"
+    );
+  }
+
+  initButtons(onlyRestart = false) {
+  //Initializes only the Restart button if onlyRestart is true
+  	this.restartBtn.classList.add("clickable");
+  	this.restartBtn.addEventListener("click", this.initHanoiFunc);
+  		
+  // if onlyRestart false then initialize Solve button also.
+  	if (!onlyRestart) {
+	  	this.solveBtn.classList.add("clickable");
+	  	this.solveBtn.addEventListener("click", this.handleSolveFunc);
+  	}
+
+  }
+
+  initTowers() {
+    this.towers = [[], [], []]; //Initializes towers, 2D empty array
+
+    for (let i = this.discs; i > 0; i--) {
+      this.towers[0].push({id:i}); //adding discs as object literal to it
+    }
+  }
+
+  // Clears and redraws the towers based on the current state.
+  drawTowers() {
+    // for every tower
+    this.towerEls.forEach((towerEl, index) => {
+
+    // clears the pervious state of discs
+      while (towerEl.lastChild) {
+        towerEl.removeChild(towerEl.lastChild);
+      }
+
+      // for each disc object
+      // creating a new element LI add its id as its text
+      this.towers[index].map((disc, count) => {
+      let li = document.createElement("LI");
+      li.id = `disc-${disc.id}`;
+      li.textContent = disc.id;
+
+      towerEl.appendChild(li);
+      });
+    });
+  }
+
+  // to show the message to user
+  displayMessage(message) {
+    const messageBox = document.querySelector("#message");
+    messageBox.innerHTML = message;
+  }
+
+  // Initiates the solve process, animation
+  async handleSolve() {
+  	this.voidButtons(); //Disables the Solve and Restart buttons.
+
+    this.displayMessage("Solving...");
+
+    let solved;
+
+      solved = this.solve(this.discs, 0, 1, 2);
+
+      solved.then(() => {
+		    this.Complete("Your Tower Of Hanoi Problem is solved");
+      });
+  }
+
+  voidButtons() { //Disables the Solve and Restart buttons.
+  	this.solveBtn.classList.remove("clickable");
+  	this.solveBtn.removeEventListener("click", this.handleSolveFunc);
+  	this.restartBtn.classList.remove("clickable");
+  	this.restartBtn.removeEventListener("click", this.initHanoiFunc);
+  }
+
+  async solve(t, a, b, c) {
+    if (t === 1) {
+      //Animates the movement of discs from one tower to another.
+      await this.animateMovingDiscs(a, c, 1000);
+    } 
+    else {
+      //moving n-1 discs to helper tower
+      await this.solve(t - 1, a, c, b);
+      //moving nth discs to destination tower
+      await this.solve(1, a, b, c);
+      //moving n-1 discs from helper to destination tower
+      await this.solve(t - 1, b, a, c);
+    }
+  }
+
+  async animateMovingDiscs(fromIdx, toIdx, delay) {
+    // Delay
+    const promise = new Promise(resolve => setTimeout(resolve, delay));
+    
+    await promise;
+
+	  this.moveDisc(fromIdx, toIdx); //Moves a disc from one tower to another.
+    
+    this.drawTowers(); //Clears and redraws the towers based on the current state.
+  }
+
+  moveDisc(fromIdx, toIdx) { 
+    this.towers[toIdx].push(this.towers[fromIdx].pop());
+
+  }
+
+  Complete(withMessage) {
+    this.voidButtons(); //Disables the Solve and Restart buttons.
+    this.displayMessage(withMessage); // display compeletion meassage
+    this.initButtons(true); // the Restart buttons become clickable
+  }
+}
+
+
+const towers = document.querySelectorAll(".tower");
+const solveBtn = document.querySelector(".solve");
+const restartBtn = document.querySelector(".restart");
+const towerC = document.getElementById("towers");
+
+// tower of hanoi visulisation is not running. flag set to 1
+let flag=1;
+
+function enter(){
+  if(flag==1){  // if tower of hanoi visulisation is not running then game initialize.
+
+  const userInput = prompt("Enter a number:");
+
+  let parsedInput = parseInt(userInput);
+
+  if ((!isNaN(parsedInput))&&(parsedInput>0)) {
+    //creating new object
+    flag=0; // set the flag to 0 as visulisation started
+
+    //increase tower height acc. to discs numbers
+    if(parsedInput>9){
+    towerC.style.height=`${(parsedInput*20) + 10}px`      
+    }
+
+    const toh = new TowersOfHanoi(parsedInput, towers, solveBtn, restartBtn);
+  }
+  else {
+    alert("Invalid input. Please enter a valid number that should be greater than zero.");
+  }
+
+  // Generate CSS rules dynamically
+  let cssRules = ''; // To store css rules
+  for (let i = 1; i <= parsedInput; i++) { //genarating style for every disc
+    //targeting li element with attribute disc-i , i is cuurent disc number
+    if(parsedInput>20){ //same width for all, if discs > 20
+      cssRules += `#towers li[id=disc-${i}] { 
+        width: 120px;
+        text-align:center;
+      }\n`;
+    }
+    else{ // width of increases as number increase till 20
+      cssRules += `#towers li[id=disc-${i}] { 
+        width: ${60 + i * 10}px;
+        text-align:center;
+      }\n`;
+    }
+  }
+
+  // creating style element , append css rules to it , append style element to head
+  let style = document.createElement('style');
+  style.appendChild(document.createTextNode(cssRules));
+  document.head.appendChild(style); 
+
+  }
+  else{
+    alert("Hanoi Tower visulisation is already runing");
+  }
+}
+
+</script>
+<!------------ JavaScript scripting end ------------>
+
+</body>
+</html>
+
